@@ -13,7 +13,7 @@ month and projects whether you will run out before the quota resets.
 > author's machine, but expect rough edges and review the code before relying
 > on it.
 
-<p>
+<p align="center">
   <img src="docs/screenshots/widget-small.png" alt="Small widget" height="180">
   <img src="docs/screenshots/widget-medium.png" alt="Medium widget" height="180">
 </p>
@@ -71,7 +71,7 @@ with your own team, copy `Config/Local.xcconfig.example` to
 2. Choose **Sign In…** and sign in to GitHub. Once signed in, the menu shows
    your current usage and forecast:
 
-   <img src="docs/screenshots/menu.png" alt="Menu bar menu" width="258">
+   <p align="center"><img src="docs/screenshots/menu.png" alt="Menu bar menu" width="258"></p>
 
 3. Right-click the desktop, choose **Edit Widgets…**, search for
    **Flight Engineer**, and drag the small or medium widget onto the desktop.
