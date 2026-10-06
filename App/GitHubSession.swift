@@ -10,8 +10,12 @@ enum GitHubSession {
 
     private static var dataStore: WKWebsiteDataStore { .default() }
 
+    /// WebKit only loads persisted cookies once a web view exists in the process.
+    private static let cookieLoader = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
+
     static func cookies() async -> [HTTPCookie] {
-        await dataStore.httpCookieStore.allCookies().filter { $0.domain.hasSuffix("github.com") }
+        _ = cookieLoader
+        return await dataStore.httpCookieStore.allCookies().filter { $0.domain.hasSuffix("github.com") }
     }
 
     static func isSignedIn() async -> Bool {
