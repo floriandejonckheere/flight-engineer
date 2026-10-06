@@ -7,6 +7,11 @@ the pilot and the copilot, monitoring the aircraft's systems and fuel. This app
 does the same for your Copilot: it tracks how many AI credits you have used this
 month and projects whether you will run out before the quota resets.
 
+<p>
+  <img src="docs/screenshots/widget-small.png" alt="Small widget" height="180">
+  <img src="docs/screenshots/widget-medium.png" alt="Medium widget" height="180">
+</p>
+
 ## Features
 
 - Desktop widget (small and medium) showing the AI credits used this month,
@@ -57,9 +62,13 @@ with your own team, copy `Config/Local.xcconfig.example` to
 ## Usage
 
 1. Launch Flight Engineer. A gauge icon appears in the menu bar.
-2. Choose **Sign In…** and sign in to GitHub.
-3. Right-click the desktop, choose **Edit Widgets…**, and add the
-   **Flight Engineer** widget.
+2. Choose **Sign In…** and sign in to GitHub. Once signed in, the menu shows
+   your current usage and forecast:
+
+   <img src="docs/screenshots/menu.png" alt="Menu bar menu" width="258">
+
+3. Right-click the desktop, choose **Edit Widgets…**, search for
+   **Flight Engineer**, and drag the small or medium widget onto the desktop.
 
 ## Privacy
 
