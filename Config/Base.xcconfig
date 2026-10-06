@@ -1,0 +1,8 @@
+// Ad-hoc signing by default: the app is meant to run locally without an
+// Apple Developer account. Override any of these in Config/Local.xcconfig.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+ENABLE_HARDENED_RUNTIME = NO
+
+#include? "Local.xcconfig"
