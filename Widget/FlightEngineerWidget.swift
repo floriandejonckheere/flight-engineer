@@ -131,7 +131,7 @@ struct CreditsWidgetView: View {
         VStack(alignment: .leading, spacing: 6) {
             if let forecast = entry.forecast {
                 Chart(forecast.history, id: \.day) { usage in
-                    BarMark(x: .value("Day", usage.day, unit: .day), y: .value("Credits", usage.credits))
+                    BarMark(x: .value("Day", usage.day.formatted(.dateTime.month().day())), y: .value("Credits", usage.credits))
                         .foregroundStyle(tint.gradient)
                         .cornerRadius(2)
                     RuleMark(y: .value("Average", forecast.dailyRate))
