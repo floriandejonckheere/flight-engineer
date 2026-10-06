@@ -7,6 +7,12 @@ the pilot and the copilot, monitoring the aircraft's systems and fuel. This app
 does the same for your Copilot: it tracks how many AI credits you have used this
 month and projects whether you will run out before the quota resets.
 
+> [!NOTE]
+> This project is vibe coded: it was written almost entirely by an AI coding
+> assistant, with a human steering, testing and reviewing. It works on the
+> author's machine, but expect rough edges and review the code before relying
+> on it.
+
 <p>
   <img src="docs/screenshots/widget-small.png" alt="Small widget" height="180">
   <img src="docs/screenshots/widget-medium.png" alt="Medium widget" height="180">
