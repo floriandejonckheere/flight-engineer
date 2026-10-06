@@ -45,13 +45,23 @@ day (Monday to Friday) from them:
 3. The projection is the current usage plus the daily rate for each working
    day left until the quota resets (midnight UTC on the reset date).
 
-## Requirements
+## Installation
 
-- macOS 14 (Sonoma) or later
-- Xcode 16 or later
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
+Flight Engineer requires macOS 14 (Sonoma) or later. Install it with
+[Homebrew](https://brew.sh):
+
+```sh
+brew install --cask floriandejonckheere/flight-engineer/flight-engineer
+```
+
+The app is ad-hoc signed and not notarized; the cask removes the quarantine
+attribute so macOS allows it to run.
 
 ## Building
+
+Building from source requires Xcode 16 or later and
+[XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+
 
 ```sh
 make install   # builds a release version and copies it to /Applications
@@ -64,6 +74,24 @@ Xcode, run `make generate` and open `FlightEngineer.xcodeproj`.
 The app is ad-hoc signed and does not need an Apple Developer account. To sign
 with your own team, copy `Config/Local.xcconfig.example` to
 `Config/Local.xcconfig` and fill in your team ID.
+
+## Releasing
+
+1. Tag the release and push the tag:
+
+   ```sh
+   git tag -a v1.1.0 -m "Flight Engineer 1.1.0"
+   git push origin v1.1.0
+   ```
+
+2. The release workflow builds a universal app and attaches
+   `FlightEngineer-<version>.zip` to a GitHub release.
+3. Update `version` and `sha256` in the cask of the
+   [Homebrew tap](https://github.com/floriandejonckheere/homebrew-flight-engineer):
+
+   ```sh
+   gh release download v1.1.0 -p '*.zip' -O - | shasum -a 256
+   ```
 
 ## Usage
 
