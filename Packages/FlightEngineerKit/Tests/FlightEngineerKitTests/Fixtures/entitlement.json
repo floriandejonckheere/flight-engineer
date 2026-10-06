@@ -1,0 +1,49 @@
+{
+    "licenseType": "licensed_full",
+    "quotas": {
+        "limits": {
+            "premiumInteractions": 30000
+        },
+        "remaining": {
+            "premiumInteractions": 24500,
+            "chatPercentage": 100.0,
+            "premiumInteractionsPercentage": 81.6
+        },
+        "resetDate": "2026-11-01",
+        "resetDateUtc": "2026-11-01T00:00:00.000Z",
+        "overagesEnabled": true,
+        "tokenBasedBillingEnabled": true,
+        "chatQuota": {
+            "percentRemaining": 100.0,
+            "total": 0,
+            "used": 0.0,
+            "hasQuota": true,
+            "unlimited": true
+        },
+        "completionsQuota": {
+            "percentRemaining": 100.0,
+            "total": 0,
+            "used": 0.0,
+            "hasQuota": true,
+            "unlimited": true
+        },
+        "premiumInteractionsQuota": {
+            "percentRemaining": 81.6,
+            "total": 30000,
+            "used": 5500.0,
+            "hasQuota": true,
+            "unlimited": false,
+            "creditsUsed": 5499
+        },
+        "overageQuota": {
+            "permitted": true,
+            "percentRemaining": 100.0,
+            "budget": 0.0,
+            "spend": 0.0
+        }
+    },
+    "plan": "business",
+    "trial": {
+        "eligible": false
+    }
+}
