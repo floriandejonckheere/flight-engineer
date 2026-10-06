@@ -93,3 +93,7 @@ The widget runs sandboxed, which normally requires an App Group to share data
 with the app. As App Groups require a developer team, the widget instead
 reads the state file through a read-only sandbox exception for
 `~/Library/Application Support/FlightEngineer/`.
+
+## License
+
+Released under the [MIT License](LICENSE).
