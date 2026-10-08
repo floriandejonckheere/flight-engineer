@@ -35,6 +35,15 @@ struct SharedStateTests {
         #expect(state.snapshots.map(\.used) == [200])
     }
 
+    @Test func becomesStaleAfterAnHourWithoutSuccess() {
+        let lastSuccess = Date(timeIntervalSince1970: 1_790_000_000)
+        let state = SharedState(status: .ok, lastSuccess: lastSuccess)
+
+        #expect(!state.isStale(at: lastSuccess.addingTimeInterval(60 * 60)))
+        #expect(state.isStale(at: lastSuccess.addingTimeInterval(60 * 60 + 1)))
+        #expect(SharedState().isStale(at: lastSuccess))
+    }
+
     @Test func roundTripsThroughDisk() throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

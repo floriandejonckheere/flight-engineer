@@ -26,6 +26,13 @@ public struct SharedState: Codable, Equatable, Sendable {
         snapshots.max { $0.date < $1.date }
     }
 
+    /// Whether the usage has not been fetched successfully within `interval`,
+    /// e.g. because the app is not running or fetching keeps failing.
+    public func isStale(at now: Date, interval: TimeInterval = 60 * 60) -> Bool {
+        guard let lastSuccess else { return true }
+        return now.timeIntervalSince(lastSuccess) > interval
+    }
+
     /// Appends a snapshot, keeping only the last snapshot of each past day and
     /// dropping snapshots older than `retentionDays`.
     public mutating func record(_ snapshot: UsageSnapshot, calendar: Calendar = .current, retentionDays: Int = 62) {

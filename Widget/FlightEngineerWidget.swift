@@ -26,11 +26,13 @@ struct Entry: TimelineEntry {
     let date: Date
     let state: SharedState
     let forecast: Forecast?
+    let isStale: Bool
 
     init(date: Date, state: SharedState) {
         self.date = date
         self.state = state
         self.forecast = Forecaster().forecast(snapshots: state.snapshots, now: date)
+        self.isStale = state.isStale(at: date)
     }
 }
 
@@ -86,7 +88,11 @@ struct CreditsWidgetView: View {
             Image(systemName: "gauge.with.dots.needle.67percent")
             Text("Copilot")
             Spacer()
-            if entry.state.status != .ok {
+            if entry.isStale, let lastSuccess = entry.state.lastSuccess {
+                Text(lastSuccess.formatted(.relative(presentation: .numeric, unitsStyle: .abbreviated)))
+                    .lineLimit(1)
+            }
+            if entry.state.status != .ok || entry.isStale {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
             }
