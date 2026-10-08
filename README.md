@@ -39,9 +39,11 @@ day (Monday to Friday) from them:
    between. Usage on weekends is attributed to the next working day. On the
    first run, the credits used so far are spread over the working days
    elapsed since the start of the period.
-2. The daily rate is a linearly weighted average of the last five complete
-   working days, with the most recent day weighing the most. Early in the
-   month, days from the previous period are used too.
+2. The daily rate is a linearly weighted average of the last ten complete
+   working days. Recent days weigh more, but never more than twice as much as
+   the oldest one, so a single heavy day does not skew the forecast. Early in
+   the month, days from the previous period are used too. Days without data
+   are filled with the average of the known days.
 3. The projection is the current usage plus the daily rate for each working
    day left until the quota resets (midnight UTC on the reset date).
 
