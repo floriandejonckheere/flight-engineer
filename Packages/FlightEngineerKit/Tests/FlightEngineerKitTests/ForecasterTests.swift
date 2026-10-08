@@ -49,13 +49,28 @@ struct ForecasterTests {
             snapshot(5, used: 600),
             snapshot(6, hour: 10, used: 650),
         ]
+        let forecaster = Forecaster(calendar: calendar, window: 3)
         let forecast = try #require(forecaster.forecast(snapshots: snapshots, now: date(6, hour: 10)))
 
-        #expect(forecast.dailyRate == 250) // (100 * 1 + 100 * 2 + 400 * 3) / 6
-        #expect(forecast.projectedUsage == 5350) // 650 + 200 + 18 * 250
-        #expect(forecast.projectedBalance == 24650)
+        #expect(forecast.dailyRate == 220) // (100 * 4 + 100 * 5 + 400 * 6) / 15
+        #expect(forecast.projectedUsage == 4780) // 650 + 170 + 18 * 220
+        #expect(forecast.projectedBalance == 25220)
         #expect(forecast.outlook == .creditsLeft)
         #expect(forecast.depletionDay == nil)
+    }
+
+    @Test func fillsUnknownPastDaysWithAverage() throws {
+        let snapshots = [
+            snapshot(2, used: 200),
+            snapshot(5, used: 600),
+            snapshot(6, hour: 10, used: 650),
+        ]
+        let forecaster = Forecaster(calendar: calendar, window: 5)
+        let forecast = try #require(forecaster.forecast(snapshots: snapshots, now: date(6, hour: 10)))
+
+        // Sep 29 and 30 are unknown and filled with the average of Oct 1, 2 and 5.
+        #expect(forecast.dailyRate == 207.5) // (200 * 6 + 200 * 7 + 100 * 8 + 100 * 9 + 400 * 10) / 40
+        #expect(forecast.history.map(\.day) == [day(1), day(2), day(5), day(6)])
     }
 
     @Test func attributesWeekendUsageToNextWorkingDay() throws {
@@ -106,10 +121,11 @@ struct ForecasterTests {
             snapshot(30, month: 9, used: 2000),
             snapshot(1, hour: 10, used: 100),
         ]
+        let forecaster = Forecaster(calendar: calendar, window: 5)
         let forecast = try #require(forecaster.forecast(snapshots: snapshots, now: date(1, hour: 10)))
 
         // Sep 24, 25, 28 at 50 (spread over 20 working days), Sep 29 and 30 at 500.
-        #expect(forecast.dailyRate == 320) // (50 * 1 + 50 * 2 + 50 * 3 + 500 * 4 + 500 * 5) / 15
+        #expect(forecast.dailyRate == 263.75) // (50 * 6 + 50 * 7 + 50 * 8 + 500 * 9 + 500 * 10) / 40
     }
 
     @Test func ignoresDaysAfterReset() throws {

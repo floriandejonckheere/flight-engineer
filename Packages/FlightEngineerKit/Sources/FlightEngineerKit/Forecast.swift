@@ -52,7 +52,8 @@ public struct Forecast: Codable, Equatable, Sendable {
 }
 
 /// Projects Copilot credit usage until the quota resets, based on a weighted
-/// average of the most recent working days (weekends are ignored).
+/// average of the most recent working days (weekends are ignored). Recent days
+/// weigh only slightly more, so a single heavy day does not dominate the forecast.
 public struct Forecaster: Sendable {
     public var calendar: Calendar
     /// Number of past working days taken into account for the daily rate.
@@ -68,7 +69,7 @@ public struct Forecaster: Sendable {
         return calendar
     }()
 
-    public init(calendar: Calendar = .current, window: Int = 5, reachingQuotaThreshold: Double = 0.9, historyLength: Int = 10) {
+    public init(calendar: Calendar = .current, window: Int = 10, reachingQuotaThreshold: Double = 0.9, historyLength: Int = 10) {
         self.calendar = calendar
         self.window = window
         self.reachingQuotaThreshold = reachingQuotaThreshold
@@ -82,9 +83,9 @@ public struct Forecaster: Sendable {
         let today = calendar.startOfDay(for: now)
         let samples = dailySamples(from: snapshots)
 
-        let pastSamples = samples.filter { $0.day < today }.suffix(window)
+        let pastCredits = pastCredits(from: samples, before: today)
         let usedToday = samples.first { $0.day == today }?.credits ?? 0
-        let dailyRate = pastSamples.isEmpty ? usedToday : weightedAverage(pastSamples.map(\.credits))
+        let dailyRate = pastCredits.isEmpty ? usedToday : weightedAverage(pastCredits)
 
         let resetDay = localDay(matchingUTCDayOf: latest.resetDate)
         let isTodayWorking = isWorkingDay(today) && today < resetDay
@@ -154,6 +155,18 @@ public struct Forecaster: Sendable {
             .sorted { $0.day < $1.day }
     }
 
+    /// Credits consumed on the last `window` working days before `today`, oldest
+    /// first. Days without data are filled with the average of the known days;
+    /// empty when none of the days are known.
+    func pastCredits(from samples: [DailyUsage], before today: Date) -> [Double] {
+        let days = workingDays(before: today, count: window)
+        let known = Dictionary(samples.filter { days.contains($0.day) }.map { ($0.day, $0.credits) }, uniquingKeysWith: +)
+        guard !known.isEmpty else { return [] }
+
+        let average = known.values.reduce(0, +) / Double(known.count)
+        return days.map { known[$0] ?? average }
+    }
+
     func isWorkingDay(_ day: Date) -> Bool {
         !calendar.isDateInWeekend(day)
     }
@@ -169,6 +182,17 @@ public struct Forecaster: Sendable {
         return days
     }
 
+    /// The last `count` working days strictly before `end` (start of day), oldest first.
+    func workingDays(before end: Date, count: Int) -> [Date] {
+        var days: [Date] = []
+        var day = end
+        while days.count < count {
+            day = calendar.date(byAdding: .day, value: -1, to: day)!
+            if isWorkingDay(day) { days.insert(day, at: 0) }
+        }
+        return days
+    }
+
     /// GitHub resets quotas at midnight UTC; the local day carrying the same date
     /// is used as the boundary so the period never spills over into another day.
     func localDay(matchingUTCDayOf date: Date) -> Date {
@@ -176,9 +200,10 @@ public struct Forecaster: Sendable {
         return calendar.date(from: components).map { calendar.startOfDay(for: $0) } ?? calendar.startOfDay(for: date)
     }
 
-    /// Linearly weighted average where the most recent value weighs the most.
+    /// Linearly weighted average where the most recent value weighs the most,
+    /// yet never more than twice as much as the oldest one.
     func weightedAverage(_ values: [Double]) -> Double {
-        let weights = (1...values.count).map(Double.init)
+        let weights = (values.count + 1...values.count * 2).map(Double.init)
         let weightedSum = zip(values, weights).map(*).reduce(0, +)
         return weightedSum / weights.reduce(0, +)
     }
