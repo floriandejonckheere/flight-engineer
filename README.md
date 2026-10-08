@@ -79,21 +79,28 @@ with your own team, copy `Config/Local.xcconfig.example` to
 
 ## Releasing
 
-1. Tag the release and push the tag:
+Releases are published with the release script, which requires an
+authenticated [GitHub CLI](https://cli.github.com) with push access to this
+repository and the
+[Homebrew tap](https://github.com/floriandejonckheere/homebrew-flight-engineer):
 
-   ```sh
-   git tag -a v1.1.0 -m "Flight Engineer 1.1.0"
-   git push origin v1.1.0
-   ```
+```sh
+bin/release 1.1.0
+```
 
-2. The release workflow builds a universal app and attaches
+The script:
+
+1. Checks that `main` is clean and in sync with `origin/main`, and that the
+   tag does not exist yet.
+2. Runs the unit tests, then tags the current commit as `v1.1.0` and pushes
+   the tag.
+3. Waits for the release workflow, which builds a universal app and attaches
    `FlightEngineer-<version>.zip` to a GitHub release.
-3. Update `version` and `sha256` in the cask of the
-   [Homebrew tap](https://github.com/floriandejonckheere/homebrew-flight-engineer):
+4. Updates `version` and `sha256` in the cask of the Homebrew tap and pushes
+   the change.
 
-   ```sh
-   gh release download v1.1.0 -p '*.zip' -O - | shasum -a 256
-   ```
+Afterwards, upgrade a local installation with
+`brew update && brew upgrade --cask flight-engineer`.
 
 ## Usage
 

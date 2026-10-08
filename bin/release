@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#
+# Publishes a release: tags the current commit, waits for the release workflow
+# to attach the app archive and points the Homebrew cask at the new version.
+#
+# Usage: bin/release <version>    (e.g. bin/release 1.1.0)
+
+set -euo pipefail
+
+REPO="floriandejonckheere/flight-engineer"
+TAP_REPO="floriandejonckheere/homebrew-flight-engineer"
+CASK="Casks/flight-engineer.rb"
+
+fail() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+version="${1:-}"
+version="${version#v}"
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "usage: bin/release <major.minor.patch>"
+tag="v$version"
+
+cd "$(dirname "$0")/.."
+
+[[ "$(git branch --show-current)" == "main" ]] || fail "releases are made from main"
+[[ -z "$(git status --porcelain)" ]] || fail "working tree is not clean"
+git fetch --quiet --tags origin main
+[[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || fail "main is not in sync with origin/main"
+! git rev-parse --quiet --verify "refs/tags/$tag" >/dev/null || fail "tag $tag already exists"
+
+echo "==> Running tests"
+make test
+
+echo "==> Tagging $tag"
+git tag -a "$tag" -m "Flight Engineer $version"
+git push origin "$tag"
+
+echo "==> Waiting for the release workflow"
+run_id=""
+for _ in {1..30}; do
+  run_id="$(gh run list --repo "$REPO" --workflow release.yml --branch "$tag" --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+  [[ -n "$run_id" ]] && break
+  sleep 5
+done
+[[ -n "$run_id" ]] || fail "release workflow for $tag did not start"
+gh run watch "$run_id" --repo "$REPO" --exit-status --interval 15 >/dev/null || fail "release workflow failed: gh run view $run_id --repo $REPO --log-failed"
+
+echo "==> Computing archive checksum"
+sha256="$(gh release download "$tag" --repo "$REPO" --pattern '*.zip' --output - | shasum -a 256 | cut -d ' ' -f 1)"
+echo "$sha256"
+
+echo "==> Updating Homebrew cask"
+tap_dir="$(mktemp -d)"
+trap 'rm -rf "$tap_dir"' EXIT
+gh repo clone "$TAP_REPO" "$tap_dir" -- --quiet
+sed -i '' -E \
+  -e "s/^(  version )\".*\"/\1\"$version\"/" \
+  -e "s/^(  sha256 )\".*\"/\1\"$sha256\"/" \
+  "$tap_dir/$CASK"
+git -C "$tap_dir" commit --quiet --all --message "feat: update flight-engineer to $version"
+git -C "$tap_dir" push --quiet origin HEAD
+
+echo "==> Released $tag"
+echo "Upgrade with: brew update && brew upgrade --cask flight-engineer"
