@@ -26,24 +26,28 @@ month and projects whether you will run out before the quota resets.
   - **Reaching quota**: projected usage ends up between 90% and 100%
   - **Shortage**: projected usage exceeds the quota, with the expected
     depletion day
+
+  The medium widget charts the credits used on each of the last 14 days,
+  with weekend days in grey.
 - Menu bar app that signs in to GitHub and refreshes the usage every 15
   minutes and when the Mac wakes up.
 
 ## How the forecast works
 
 GitHub only reports the current number of credits used, so Flight Engineer
-records a snapshot on every refresh and derives the consumption per working
-day (Monday to Friday) from them:
+records a snapshot on every refresh and derives the consumption per day from
+them. Only working days (Monday to Friday) count towards the forecast:
 
 1. Usage between two snapshots is spread evenly over the working days in
-   between. Usage on weekends is attributed to the next working day. On the
-   first run, the credits used so far are spread over the working days
-   elapsed since the start of the period.
+   between and the day of the later snapshot. Weekend days therefore only get
+   usage when a snapshot was taken on them; otherwise their usage ends up on
+   the next day with a snapshot. On the first run, the credits used so far are
+   spread over the working days elapsed since the start of the period.
 2. The daily rate is a linearly weighted average of the last ten complete
    working days. Recent days weigh more, but never more than twice as much as
-   the oldest one, so a single heavy day does not skew the forecast. Early in
-   the month, days from the previous period are used too. Days without data
-   are filled with the average of the known days.
+   the oldest one, so a single heavy day does not skew the forecast. Weekend
+   usage is ignored. Early in the month, days from the previous period are
+   used too. Days without data are filled with the average of the known days.
 3. The projection is the current usage plus the daily rate for each working
    day left until the quota resets (midnight UTC on the reset date).
 

@@ -39,7 +39,8 @@ struct ForecasterTests {
         #expect(forecast.remainingWorkingDays == 19)
         #expect(forecast.projectedUsage == 30244.5) // 5499 + 18 * 1374.75
         #expect(forecast.outlook == .shortage)
-        #expect(forecast.history.map(\.day) == [day(1), day(2), day(5), day(6)])
+        #expect(forecast.history.map(\.isWorkingDay) == [true, true, false, false, true, true])
+        #expect(forecast.history.map(\.day) == (1...6).map { day($0) })
     }
 
     @Test func weighsRecentWorkingDaysMore() throws {
@@ -70,10 +71,10 @@ struct ForecasterTests {
 
         // Sep 29 and 30 are unknown and filled with the average of Oct 1, 2 and 5.
         #expect(forecast.dailyRate == 207.5) // (200 * 6 + 200 * 7 + 100 * 8 + 100 * 9 + 400 * 10) / 40
-        #expect(forecast.history.map(\.day) == [day(1), day(2), day(5), day(6)])
+        #expect(forecast.history.map(\.day) == (1...6).map { day($0) })
     }
 
-    @Test func attributesWeekendUsageToNextWorkingDay() throws {
+    @Test func recordsUsageOnWeekendDaysWithSnapshots() throws {
         let snapshots = [
             snapshot(1, used: 100),
             snapshot(2, used: 200),
@@ -82,11 +83,28 @@ struct ForecasterTests {
         ]
         let samples = forecaster.dailySamples(from: snapshots)
 
+        // Sunday has no snapshot, so its usage is attributed to Monday.
         #expect(samples == [
-            DailyUsage(day: day(1), credits: 100),
-            DailyUsage(day: day(2), credits: 100),
-            DailyUsage(day: day(5), credits: 400),
+            DailyUsage(day: day(1), credits: 100, isWorkingDay: true),
+            DailyUsage(day: day(2), credits: 100, isWorkingDay: true),
+            DailyUsage(day: day(3), credits: 100, isWorkingDay: false),
+            DailyUsage(day: day(5), credits: 300, isWorkingDay: true),
         ])
+    }
+
+    @Test func ignoresWeekendUsageInDailyRate() throws {
+        let snapshots = [
+            snapshot(1, used: 100),
+            snapshot(2, used: 200),
+            snapshot(3, used: 1200),
+            snapshot(4, used: 2200),
+            snapshot(5, hour: 10, used: 2200),
+        ]
+        let forecaster = Forecaster(calendar: calendar, window: 2)
+        let forecast = try #require(forecaster.forecast(snapshots: snapshots, now: date(5, hour: 10)))
+
+        #expect(forecast.dailyRate == 100)
+        #expect(forecast.history.map(\.credits) == [100, 100, 1000, 1000, 0])
     }
 
     @Test func excludesWeekendsFromRemainingDays() throws {
@@ -94,7 +112,14 @@ struct ForecasterTests {
 
         // Saturday: Oct 5 through Oct 30 leaves 20 working days.
         #expect(forecast.remainingWorkingDays == 20)
-        #expect(forecast.dailyRate == 150)
+        #expect(forecast.dailyRate == 100)
+    }
+
+    @Test func returnsEveryDaySinceFirstSnapshot() {
+        let usage = forecaster.dailyUsage(snapshots: [snapshot(2, used: 200), snapshot(6, used: 600)], now: date(7, hour: 9))
+
+        #expect(usage.map(\.day) == (1...7).map { day($0) })
+        #expect(usage.map(\.credits) == [100, 100, 0, 0, 200, 200, 0])
     }
 
     @Test func detectsReachingQuota() throws {

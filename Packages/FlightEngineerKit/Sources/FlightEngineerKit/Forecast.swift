@@ -15,14 +15,17 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-/// Credits consumed on a single working day.
+/// Credits consumed on a single day.
 public struct DailyUsage: Codable, Equatable, Sendable {
     public var day: Date
     public var credits: Double
+    /// Whether the day counts towards the daily rate; weekends do not.
+    public var isWorkingDay: Bool
 
-    public init(day: Date, credits: Double) {
+    public init(day: Date, credits: Double, isWorkingDay: Bool) {
         self.day = day
         self.credits = credits
+        self.isWorkingDay = isWorkingDay
     }
 }
 
@@ -47,7 +50,7 @@ public struct Forecast: Codable, Equatable, Sendable {
     public var outlook: Outlook
     /// The working day on which the credits are expected to run out, if they do.
     public var depletionDay: Date?
-    /// Recent working days, oldest first, including today.
+    /// Recent days, oldest first, including today and non-working days.
     public var history: [DailyUsage]
 }
 
@@ -60,7 +63,7 @@ public struct Forecaster: Sendable {
     public var window: Int
     /// Fraction of the quota above which the outlook becomes `reachingQuota`.
     public var reachingQuotaThreshold: Double
-    /// Number of working days returned in `Forecast.history`.
+    /// Number of days returned in `Forecast.history`.
     public var historyLength: Int
 
     private static let utcCalendar: Calendar = {
@@ -69,7 +72,7 @@ public struct Forecaster: Sendable {
         return calendar
     }()
 
-    public init(calendar: Calendar = .current, window: Int = 10, reachingQuotaThreshold: Double = 0.9, historyLength: Int = 10) {
+    public init(calendar: Calendar = .current, window: Int = 10, reachingQuotaThreshold: Double = 0.9, historyLength: Int = 14) {
         self.calendar = calendar
         self.window = window
         self.reachingQuotaThreshold = reachingQuotaThreshold
@@ -111,13 +114,20 @@ public struct Forecaster: Sendable {
             depletionDay: outlook == .shortage
                 ? depletionDay(balance: latest.total - latest.used, today: today, todayBudget: todayRemaining, futureDays: futureDays, dailyRate: dailyRate)
                 : nil,
-            history: Array(samples.filter { $0.day <= today }.suffix(historyLength))
+            history: Array(dailyUsage(from: samples, through: today).suffix(historyLength))
         )
     }
 
-    /// Credits consumed per working day, oldest first. Usage between two snapshots
-    /// is spread evenly over the working days in between; usage on non-working days
-    /// is attributed to the next working day.
+    /// Credits consumed on every day from the first snapshot through `now`,
+    /// oldest first. Days without usage have zero credits.
+    public func dailyUsage(snapshots: [UsageSnapshot], now: Date) -> [DailyUsage] {
+        let snapshots = snapshots.filter { $0.date <= now }
+        return dailyUsage(from: dailySamples(from: snapshots), through: calendar.startOfDay(for: now))
+    }
+
+    /// Credits consumed per day, oldest first. Usage between two snapshots is
+    /// spread evenly over the working days in between and the day of the later
+    /// snapshot, so non-working days only get usage when a snapshot was taken on them.
     func dailySamples(from snapshots: [UsageSnapshot]) -> [DailyUsage] {
         var samples: [Date: Double] = [:]
 
@@ -133,17 +143,11 @@ public struct Forecaster: Sendable {
 
             var previousDay = calendar.date(byAdding: .day, value: -1, to: firstDay)!
             var previousUsed = 0.0
-            var carry = 0.0
             for (day, used) in endOfDay.sorted(by: { $0.key < $1.key }) {
-                let delta = max(0, used - previousUsed) + carry
-                let days = workingDays(after: previousDay, before: calendar.date(byAdding: .day, value: 1, to: day)!)
-                if days.isEmpty {
-                    carry = delta
-                } else {
-                    carry = 0
-                    for workingDay in days {
-                        samples[workingDay, default: 0] += delta / Double(days.count)
-                    }
+                let delta = max(0, used - previousUsed)
+                let days = workingDays(after: previousDay, before: day) + [day]
+                for spreadDay in days {
+                    samples[spreadDay, default: 0] += delta / Double(days.count)
                 }
                 previousDay = day
                 previousUsed = used
@@ -151,8 +155,23 @@ public struct Forecaster: Sendable {
         }
 
         return samples
-            .map { DailyUsage(day: $0.key, credits: $0.value) }
+            .map { DailyUsage(day: $0.key, credits: $0.value, isWorkingDay: isWorkingDay($0.key)) }
             .sorted { $0.day < $1.day }
+    }
+
+    /// Every day from the first sample through `today`, filling the days without
+    /// samples with zero credits.
+    func dailyUsage(from samples: [DailyUsage], through today: Date) -> [DailyUsage] {
+        guard let firstDay = samples.first?.day else { return [] }
+
+        let credits = Dictionary(samples.map { ($0.day, $0.credits) }, uniquingKeysWith: +)
+        var days: [DailyUsage] = []
+        var day = firstDay
+        while day <= today {
+            days.append(DailyUsage(day: day, credits: credits[day] ?? 0, isWorkingDay: isWorkingDay(day)))
+            day = calendar.date(byAdding: .day, value: 1, to: day)!
+        }
+        return days
     }
 
     /// Credits consumed on the last `window` working days before `today`, oldest
