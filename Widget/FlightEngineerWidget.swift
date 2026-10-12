@@ -139,6 +139,7 @@ struct CreditsWidgetView: View {
                 Chart(forecast.history, id: \.day) { usage in
                     BarMark(x: .value("Day", usage.day.formatted(.dateTime.month().day())), y: .value("Credits", usage.credits))
                         .foregroundStyle(usage.isWorkingDay ? tint.gradient : Color.gray.gradient)
+                        .opacity(usage.isEstimated ? 0.4 : 1)
                         .cornerRadius(2)
                     RuleMark(y: .value("Average", forecast.dailyRate))
                         .foregroundStyle(.secondary)

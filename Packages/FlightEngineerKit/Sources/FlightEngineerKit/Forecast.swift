@@ -21,11 +21,15 @@ public struct DailyUsage: Codable, Equatable, Sendable {
     public var credits: Double
     /// Whether the day counts towards the daily rate; weekends do not.
     public var isWorkingDay: Bool
+    /// Whether the credits are spread over several days because no snapshot
+    /// was taken at the end of the previous day, rather than measured.
+    public var isEstimated: Bool
 
-    public init(day: Date, credits: Double, isWorkingDay: Bool) {
+    public init(day: Date, credits: Double, isWorkingDay: Bool, isEstimated: Bool = false) {
         self.day = day
         self.credits = credits
         self.isWorkingDay = isWorkingDay
+        self.isEstimated = isEstimated
     }
 }
 
@@ -128,8 +132,10 @@ public struct Forecaster: Sendable {
     /// Credits consumed per day, oldest first. Usage between two snapshots is
     /// spread evenly over the working days in between and the day of the later
     /// snapshot, so non-working days only get usage when a snapshot was taken on them.
+    /// Usage is measured only when the previous snapshot was taken the day before.
     func dailySamples(from snapshots: [UsageSnapshot]) -> [DailyUsage] {
         var samples: [Date: Double] = [:]
+        var estimatedDays: Set<Date> = []
 
         for (resetDate, periodSnapshots) in Dictionary(grouping: snapshots, by: \.resetDate) {
             guard let periodStart = Self.utcCalendar.date(byAdding: .month, value: -1, to: resetDate) else { continue }
@@ -149,26 +155,29 @@ public struct Forecaster: Sendable {
                 for spreadDay in days {
                     samples[spreadDay, default: 0] += delta / Double(days.count)
                 }
+                if calendar.date(byAdding: .day, value: 1, to: previousDay)! != day {
+                    estimatedDays.formUnion(days)
+                }
                 previousDay = day
                 previousUsed = used
             }
         }
 
         return samples
-            .map { DailyUsage(day: $0.key, credits: $0.value, isWorkingDay: isWorkingDay($0.key)) }
+            .map { DailyUsage(day: $0.key, credits: $0.value, isWorkingDay: isWorkingDay($0.key), isEstimated: estimatedDays.contains($0.key)) }
             .sorted { $0.day < $1.day }
     }
 
-    /// Every day from the first sample through `today`, filling the days without
-    /// samples with zero credits.
+    /// Every day from the first sample through `today`. Days without samples have
+    /// zero credits and are estimated, as their usage ended up on a later day.
     func dailyUsage(from samples: [DailyUsage], through today: Date) -> [DailyUsage] {
         guard let firstDay = samples.first?.day else { return [] }
 
-        let credits = Dictionary(samples.map { ($0.day, $0.credits) }, uniquingKeysWith: +)
+        let samplesByDay = Dictionary(samples.map { ($0.day, $0) }, uniquingKeysWith: { first, _ in first })
         var days: [DailyUsage] = []
         var day = firstDay
         while day <= today {
-            days.append(DailyUsage(day: day, credits: credits[day] ?? 0, isWorkingDay: isWorkingDay(day)))
+            days.append(samplesByDay[day] ?? DailyUsage(day: day, credits: 0, isWorkingDay: isWorkingDay(day), isEstimated: true))
             day = calendar.date(byAdding: .day, value: 1, to: day)!
         }
         return days

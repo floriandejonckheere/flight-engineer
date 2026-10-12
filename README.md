@@ -28,7 +28,7 @@ month and projects whether you will run out before the quota resets.
     depletion day
 
   The medium widget charts the credits used on each of the last 14 days,
-  with weekend days in grey.
+  with weekend days in grey and estimated days faded.
 - Menu bar app that signs in to GitHub and refreshes the usage every 15
   minutes and when the Mac wakes up. Optionally shows the current and/or
   projected usage, as a percentage of the quota or in credits, next to the
@@ -45,7 +45,9 @@ them. Only working days (Monday to Friday) count towards the forecast:
    between and the day of the later snapshot. Weekend days therefore only get
    usage when a snapshot was taken on them; otherwise their usage ends up on
    the next day with a snapshot. On the first run, the credits used so far are
-   spread over the working days elapsed since the start of the period.
+   spread over the working days elapsed since the start of the period. Usage
+   is only measured when the previous snapshot was taken the day before;
+   otherwise it is an estimate, which is shown as such in the history.
 2. The daily rate is a linearly weighted average of the last ten complete
    working days. Recent days weigh more, but never more than twice as much as
    the oldest one, so a single heavy day does not skew the forecast. Weekend

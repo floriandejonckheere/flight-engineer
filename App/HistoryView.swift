@@ -32,6 +32,13 @@ struct HistoryView: View {
                 chart(usage)
                     .frame(height: 180)
 
+                if usage.contains(where: \.isEstimated) {
+                    Text("Estimated usage is spread evenly over the days without snapshots, e.g. before Flight Engineer was installed or while it was not running.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Table(usage.reversed()) {
                     TableColumn(period.title) { entry in
                         Text(label(for: entry))
@@ -39,6 +46,12 @@ struct HistoryView: View {
                     }
                     TableColumn("Credits") { entry in
                         Text(entry.credits.credits).monospacedDigit()
+                            .foregroundStyle(entry.isEstimated ? .secondary : .primary)
+                    }
+                    TableColumn("") { entry in
+                        if let note = estimateNote(for: entry) {
+                            Text(note).foregroundStyle(.secondary)
+                        }
                     }
                     .alignment(.trailing)
                 }
@@ -72,7 +85,7 @@ struct HistoryView: View {
             ForEach(usage) { entry in
                 BarMark(x: .value(period.title, entry.start, unit: period.component), y: .value("Credits", entry.credits))
                     .foregroundStyle(entry.isWorkingDay ? Color.accentColor.gradient : Color.gray.gradient)
-                    .opacity(hovered == nil || hovered == entry ? 1 : 0.5)
+                    .opacity((hovered == nil || hovered == entry ? 1 : 0.5) * (period == .day && entry.isEstimated ? 0.4 : 1))
                     .cornerRadius(2)
             }
 
@@ -111,6 +124,11 @@ struct HistoryView: View {
             Text("\(entry.credits.credits) credits")
                 .font(.callout.weight(.semibold))
                 .monospacedDigit()
+            if let note = estimateNote(for: entry) {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(6)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
@@ -129,6 +147,11 @@ struct HistoryView: View {
               let interval = calendar.dateInterval(of: .month, for: start)
         else { return }
         month = interval
+    }
+
+    private func estimateNote(for entry: PeriodUsage) -> String? {
+        guard entry.isEstimated else { return nil }
+        return period == .day ? "Estimated" : "Includes estimates"
     }
 
     private func label(for entry: PeriodUsage) -> String {

@@ -31,13 +31,16 @@ public struct PeriodUsage: Equatable, Identifiable, Sendable {
     public var credits: Double
     /// False only for non-working days in the daily history.
     public var isWorkingDay: Bool
+    /// Whether the credits of any of the days are estimated.
+    public var isEstimated: Bool
 
     public var id: Date { start }
 
-    public init(start: Date, credits: Double, isWorkingDay: Bool = true) {
+    public init(start: Date, credits: Double, isWorkingDay: Bool = true, isEstimated: Bool = false) {
         self.start = start
         self.credits = credits
         self.isWorkingDay = isWorkingDay
+        self.isEstimated = isEstimated
     }
 }
 
@@ -45,13 +48,13 @@ public extension [DailyUsage] {
     /// Sums the daily usage per `period`, oldest first.
     func grouped(by period: HistoryPeriod, calendar: Calendar = .current) -> [PeriodUsage] {
         guard period != .day else {
-            return map { PeriodUsage(start: $0.day, credits: $0.credits, isWorkingDay: $0.isWorkingDay) }
+            return map { PeriodUsage(start: $0.day, credits: $0.credits, isWorkingDay: $0.isWorkingDay, isEstimated: $0.isEstimated) }
         }
 
-        let totals = Dictionary(grouping: self) { calendar.dateInterval(of: period.component, for: $0.day)!.start }
-            .mapValues { $0.reduce(0) { $0 + $1.credits } }
-        return totals
-            .map { PeriodUsage(start: $0.key, credits: $0.value) }
+        return Dictionary(grouping: self) { calendar.dateInterval(of: period.component, for: $0.day)!.start }
+            .map { start, days in
+                PeriodUsage(start: start, credits: days.reduce(0) { $0 + $1.credits }, isEstimated: days.contains(where: \.isEstimated))
+            }
             .sorted { $0.start < $1.start }
     }
 }

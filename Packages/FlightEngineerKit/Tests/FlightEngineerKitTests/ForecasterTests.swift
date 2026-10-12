@@ -88,7 +88,7 @@ struct ForecasterTests {
             DailyUsage(day: day(1), credits: 100, isWorkingDay: true),
             DailyUsage(day: day(2), credits: 100, isWorkingDay: true),
             DailyUsage(day: day(3), credits: 100, isWorkingDay: false),
-            DailyUsage(day: day(5), credits: 300, isWorkingDay: true),
+            DailyUsage(day: day(5), credits: 300, isWorkingDay: true, isEstimated: true),
         ])
     }
 
@@ -113,6 +113,14 @@ struct ForecasterTests {
         // Saturday: Oct 5 through Oct 30 leaves 20 working days.
         #expect(forecast.remainingWorkingDays == 20)
         #expect(forecast.dailyRate == 100)
+    }
+
+    @Test func marksDaysWithoutPreviousSnapshotAsEstimated() {
+        let usage = forecaster.dailyUsage(snapshots: [snapshot(6, used: 4000), snapshot(7, used: 4500)], now: date(7))
+
+        // Oct 1 through 6 share the usage of the first snapshot; Oct 7 is measured.
+        #expect(usage.map(\.credits) == [1000, 1000, 0, 0, 1000, 1000, 500])
+        #expect(usage.map(\.isEstimated) == [true, true, true, true, true, true, false])
     }
 
     @Test func returnsEveryDaySinceFirstSnapshot() {
