@@ -7,7 +7,7 @@ import WidgetKit
 @MainActor
 @Observable
 final class UsageMonitor {
-    static let refreshInterval: Duration = .seconds(15 * 60)
+    static let refreshInterval: TimeInterval = 15 * 60
 
     private(set) var state = SharedStore.load()
     private(set) var isRefreshing = false
@@ -36,15 +36,26 @@ final class UsageMonitor {
 
         refreshLoop = Task { [weak self] in
             while !Task.isCancelled {
-                await self?.refresh()
-                try? await Task.sleep(for: Self.refreshInterval)
+                await self?.refreshIfDue()
+                guard let delay = self?.nextRefresh.timeIntervalSinceNow else { return }
+                try? await Task.sleep(for: .seconds(max(delay, 1)))
             }
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { await self?.refresh() }
+            Task { await self?.refreshIfDue() }
         }
+    }
+
+    private var nextRefresh: Date {
+        (state.lastAttempt ?? .distantPast).addingTimeInterval(Self.refreshInterval)
+    }
+
+    /// Refreshes unless the last attempt was less than `refreshInterval` ago.
+    func refreshIfDue() async {
+        guard Date.now >= nextRefresh else { return }
+        await refresh()
     }
 
     func refresh() async {

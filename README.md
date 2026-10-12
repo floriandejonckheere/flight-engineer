@@ -29,8 +29,9 @@ month and projects whether you will run out before the quota resets.
 
   The medium widget charts the credits used on each of the last 14 days,
   with weekend days in grey and estimated days faded.
-- Menu bar app that signs in to GitHub and refreshes the usage every 15
-  minutes and when the Mac wakes up. Optionally shows the current and/or
+- Menu bar app that signs in to GitHub and refreshes the usage at most once
+  every 15 minutes (including after launch or wake), unless refreshed
+  manually. Optionally shows the current and/or
   projected usage, as a percentage of the quota or in credits, next to the
   menu bar icon (e.g. `42% → 98%`).
 - Usage history per day, week or month.
