@@ -19,13 +19,34 @@ struct MenuBarLabel: View {
     @AppStorage(MenuBarPreferences.showsProjectedKey) private var showsProjected = false
     @AppStorage(MenuBarPreferences.projectedFormatKey) private var projectedFormat = UsageFormat.percentage
 
+    @Environment(\.displayScale) private var displayScale
+
+    /// The menu bar lays out an icon and a title independently, which leaves
+    /// the symbol smaller than and misaligned with the text. Rendering both
+    /// into a single template image keeps them aligned on a shared baseline.
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "gauge.with.dots.needle.67percent")
-            if let text {
-                Text(text).monospacedDigit()
-            }
+        if let text, let image = render(text) {
+            Image(nsImage: image)
+        } else {
+            Image(systemName: Self.symbolName)
         }
+    }
+
+    private static let symbolName = "gauge.with.dots.needle.67percent"
+
+    @MainActor
+    private func render(_ text: String) -> NSImage? {
+        let content = HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: Self.symbolName)
+            Text(text).monospacedDigit()
+        }
+        .font(Font(NSFont.menuBarFont(ofSize: 0)))
+
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = displayScale
+        let image = renderer.nsImage
+        image?.isTemplate = true
+        return image
     }
 
     private var text: String? {
