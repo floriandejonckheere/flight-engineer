@@ -30,7 +30,9 @@ month and projects whether you will run out before the quota resets.
   The medium widget charts the credits used on each of the last 14 days,
   with weekend days in grey.
 - Menu bar app that signs in to GitHub and refreshes the usage every 15
-  minutes and when the Mac wakes up.
+  minutes and when the Mac wakes up. Optionally shows the current and/or
+  projected usage, as a percentage of the quota or in credits, next to the
+  menu bar icon (e.g. `42% → 98%`).
 
 ## How the forecast works
 
@@ -114,7 +116,9 @@ Afterwards, upgrade a local installation with
 
    <p align="center"><img src="docs/screenshots/menu.png" alt="Menu bar menu" width="258"></p>
 
-3. Right-click the desktop, choose **Edit Widgets…**, search for
+3. Choose **Settings…** to sign out, launch Flight Engineer at login, or show
+   the current and projected usage next to the menu bar icon.
+4. Right-click the desktop, choose **Edit Widgets…**, search for
    **Flight Engineer**, and drag the small or medium widget onto the desktop.
 
 ## Privacy

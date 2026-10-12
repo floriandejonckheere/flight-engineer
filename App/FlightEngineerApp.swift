@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct FlightEngineerApp: App {
     static let signInWindowID = "sign-in"
+    static let settingsWindowID = "settings"
 
     @State private var monitor = UsageMonitor()
 
@@ -11,7 +12,7 @@ struct FlightEngineerApp: App {
         MenuBarExtra {
             MenuContent(monitor: monitor)
         } label: {
-            Image(systemName: "gauge.with.dots.needle.67percent")
+            MenuBarLabel(monitor: monitor)
                 .task { monitor.start() }
         }
 
@@ -19,11 +20,16 @@ struct FlightEngineerApp: App {
             SignInView(monitor: monitor)
         }
         .windowResizability(.contentSize)
+
+        Window("Flight Engineer Settings", id: Self.settingsWindowID) {
+            SettingsView(monitor: monitor)
+        }
+        .windowResizability(.contentSize)
     }
 }
 
 private struct MenuContent: View {
-    @Bindable var monitor: UsageMonitor
+    let monitor: UsageMonitor
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -53,16 +59,14 @@ private struct MenuContent: View {
 
         if monitor.state.status == .signedOut {
             Button("Sign In…") {
-                NSApp.activate()
-                openWindow(id: FlightEngineerApp.signInWindowID)
-            }
-        } else {
-            Button("Sign Out") {
-                Task { await monitor.signOut() }
+                open(FlightEngineerApp.signInWindowID)
             }
         }
 
-        Toggle("Launch at Login", isOn: $monitor.launchesAtLogin)
+        Button("Settings…") {
+            open(FlightEngineerApp.settingsWindowID)
+        }
+        .keyboardShortcut(",")
 
         Divider()
 
@@ -70,6 +74,11 @@ private struct MenuContent: View {
             NSApp.terminate(nil)
         }
         .keyboardShortcut("q")
+    }
+
+    private func open(_ windowID: String) {
+        NSApp.activate()
+        openWindow(id: windowID)
     }
 
     @ViewBuilder

@@ -20,11 +20,11 @@ final class UsageMonitor {
         Forecaster().forecast(snapshots: state.snapshots, now: .now)
     }
 
-    var launchesAtLogin: Bool {
-        get { SMAppService.mainApp.status == .enabled }
-        set {
-            try? newValue ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
-        }
+    private(set) var launchesAtLogin = SMAppService.mainApp.status == .enabled
+
+    func setLaunchesAtLogin(_ enabled: Bool) {
+        try? enabled ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
+        launchesAtLogin = SMAppService.mainApp.status == .enabled
     }
 
     func start() {

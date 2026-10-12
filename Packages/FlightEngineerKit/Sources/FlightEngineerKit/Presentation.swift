@@ -29,6 +29,32 @@ public extension Forecast {
     }
 }
 
+/// How usage is shown next to the menu bar icon.
+public enum UsageFormat: String, CaseIterable, Identifiable, Sendable {
+    case percentage
+    case credits
+
+    public var id: Self { self }
+
+    public var title: String {
+        switch self {
+        case .percentage: "Percentage"
+        case .credits: "Credits"
+        }
+    }
+
+    /// Formats `value` as e.g. "42%" of `total`, or "12,600" credits.
+    public func format(_ value: Double, total: Double) -> String {
+        switch self {
+        case .percentage:
+            guard total > 0 else { return "–" }
+            return "\(Int((value / total * 100).rounded()))%"
+        case .credits:
+            return value.credits
+        }
+    }
+}
+
 public extension Double {
     var credits: String {
         Int(rounded()).formatted()
