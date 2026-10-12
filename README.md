@@ -33,6 +33,7 @@ month and projects whether you will run out before the quota resets.
   minutes and when the Mac wakes up. Optionally shows the current and/or
   projected usage, as a percentage of the quota or in credits, next to the
   menu bar icon (e.g. `42% → 98%`).
+- Usage history per day, week or month.
 
 ## How the forecast works
 
@@ -117,7 +118,9 @@ Afterwards, upgrade a local installation with
    <p align="center"><img src="docs/screenshots/menu.png" alt="Menu bar menu" width="258"></p>
 
 3. Choose **Settings…** to sign out, launch Flight Engineer at login, or show
-   the current and projected usage next to the menu bar icon.
+   the current and projected usage next to the menu bar icon. Choose
+   **Show History…** to see the credits used per day (a month at a time),
+   week or month; hover over a bar to see its credits.
 4. Right-click the desktop, choose **Edit Widgets…**, search for
    **Flight Engineer**, and drag the small or medium widget onto the desktop.
 
@@ -126,8 +129,9 @@ Afterwards, upgrade a local installation with
 Flight Engineer reads your usage from the private
 `https://github.com/github-copilot/chat/entitlement` endpoint, using the
 GitHub session from the built-in sign-in window. The session cookie stays in
-the app's WebKit data store and is only sent to github.com. Usage history is
-stored in `~/Library/Application Support/FlightEngineer/state.json`.
+the app's WebKit data store and is only sent to github.com. Usage history (one
+snapshot per day, for up to 400 days) is stored in
+`~/Library/Application Support/FlightEngineer/state.json`.
 
 As this endpoint is undocumented, it may change or stop working at any time.
 

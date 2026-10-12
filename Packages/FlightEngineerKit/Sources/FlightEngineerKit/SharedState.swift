@@ -35,7 +35,7 @@ public struct SharedState: Codable, Equatable, Sendable {
 
     /// Appends a snapshot, keeping only the last snapshot of each past day and
     /// dropping snapshots older than `retentionDays`.
-    public mutating func record(_ snapshot: UsageSnapshot, calendar: Calendar = .current, retentionDays: Int = 62) {
+    public mutating func record(_ snapshot: UsageSnapshot, calendar: Calendar = .current, retentionDays: Int = 400) {
         let today = calendar.startOfDay(for: snapshot.date)
         let cutoff = calendar.date(byAdding: .day, value: -retentionDays, to: today)!
 

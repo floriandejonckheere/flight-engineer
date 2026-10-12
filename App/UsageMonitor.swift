@@ -20,6 +20,10 @@ final class UsageMonitor {
         Forecaster().forecast(snapshots: state.snapshots, now: .now)
     }
 
+    var dailyUsage: [DailyUsage] {
+        Forecaster().dailyUsage(snapshots: state.snapshots, now: .now)
+    }
+
     private(set) var launchesAtLogin = SMAppService.mainApp.status == .enabled
 
     func setLaunchesAtLogin(_ enabled: Bool) {

@@ -5,6 +5,7 @@ import SwiftUI
 struct FlightEngineerApp: App {
     static let signInWindowID = "sign-in"
     static let settingsWindowID = "settings"
+    static let historyWindowID = "history"
 
     @State private var monitor = UsageMonitor()
 
@@ -25,6 +26,10 @@ struct FlightEngineerApp: App {
             SettingsView(monitor: monitor)
         }
         .windowResizability(.contentSize)
+
+        Window("Usage History", id: Self.historyWindowID) {
+            HistoryView(monitor: monitor)
+        }
     }
 }
 
@@ -62,6 +67,11 @@ private struct MenuContent: View {
                 open(FlightEngineerApp.signInWindowID)
             }
         }
+
+        Button("Show History…") {
+            open(FlightEngineerApp.historyWindowID)
+        }
+        .keyboardShortcut("y")
 
         Button("Settings…") {
             open(FlightEngineerApp.settingsWindowID)
