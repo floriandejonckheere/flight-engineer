@@ -36,6 +36,13 @@ struct FlightEngineerApp: App {
 private struct MenuContent: View {
     let monitor: UsageMonitor
     @Environment(\.openWindow) private var openWindow
+    @State private var menuOpenedAt = Date.now
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.dateTimeStyle = .named
+        return formatter
+    }()
 
     var body: some View {
         Group {
@@ -50,7 +57,10 @@ private struct MenuContent: View {
             }
 
             if let lastSuccess = monitor.state.lastSuccess {
-                Text("Updated \(lastSuccess.formatted(.relative(presentation: .named)))")
+                Text("Updated \(Self.relativeFormatter.localizedString(for: lastSuccess, relativeTo: menuOpenedAt))")
+                    .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
+                        menuOpenedAt = .now
+                    }
             }
         }
 
